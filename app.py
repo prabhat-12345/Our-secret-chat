@@ -99,7 +99,8 @@ if user_query:
     # 2. Generate Assistant Response
     with st.chat_message("assistant"):
         # 👉 UPDATE: Groq ka sateek aur latest version integration model ID
-        ACTIVE_MODEL = "openai/gpt-oss-120b" 
+ ACTIVE_MODEL = "openai/gpt-oss-120b"
+        
         
         if mode == "Mera Personal SQL Database (RAG)":
             with st.spinner("Searching SQL Vault..."):
