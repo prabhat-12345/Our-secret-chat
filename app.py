@@ -98,6 +98,9 @@ if user_query:
 
     # 2. Generate Assistant Response
     with st.chat_message("assistant"):
+        # 👉 UPDATE: Groq ka sateek aur latest version integration model ID
+        ACTIVE_MODEL = "openai/gpt-oss-120b" 
+        
         if mode == "Mera Personal SQL Database (RAG)":
             with st.spinner("Searching SQL Vault..."):
                 cursor.execute("SELECT topic, information FROM SecretVault")
@@ -105,22 +108,23 @@ if user_query:
                 
                 diary_context = ""
                 for row in all_records:
-                    diary_context += f"Topic: {row}, Secret Info: {row}\n"
+                    diary_context += f"Topic: {row[0]}, Secret Info: {row[1]}\n"
                 
-                system_prompt = f"""
-                Aap ek personal private assistant hain. Aapko niche diye gaye DIARY DATA ke aadhar par hi user ke sawal ka hindi/hinglish me jawab dena hai.
-                Agar data me jawab na mile, toh saaf keh dein 'Mujhe is baare me nahi sikhaya gaya hai'.
+                # Note: gpt-oss-120b me direct instruction context ke sath user flow me dalna behtar kaam karta hai
+                user_combined_prompt = f"""
+                System Instruction: Aap ek personal private assistant hain. Aapko niche diye gaye DIARY DATA ke aadhar par hi user ke sawal ka hindi/hinglish me jawab dena hai. Agar data me jawab na mile, toh saaf keh dein 'Mujhe is baare me nahi sikhaya gaya hai'.
                 
                 DIARY DATA:
                 {diary_context}
+                
+                User Sawaal: {user_query}
                 """
                 
                 try:
                     response = groq_client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
+                        model=ACTIVE_MODEL,
                         messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_query}
+                            {"role": "user", "content": user_combined_prompt}
                         ]
                     )
                     ai_reply = response.choices.message.content
@@ -138,18 +142,19 @@ if user_query:
                     for res in results:
                         web_context += f"Title: {res.get('title')}\nContent: {res.get('content')}\n\n"
                     
-                    system_prompt = f"""
-                    Aap ek intelligent web assistant hain. Niche diye gaye internet search data ke aadhar par user ke sawal ka short aur crisp jawab Hindi/Hinglish me banayein.
+                    user_combined_prompt = f"""
+                    System Instruction: Aap ek intelligent web assistant hain. Niche diye gaye internet search data ke aadhar par user ke sawal ka short aur crisp jawab Hindi/Hinglish me banayein.
                     
                     INTERNET DATA:
                     {web_context}
+                    
+                    User Sawaal: {user_query}
                     """
                     
                     response = groq_client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
+                        model=ACTIVE_MODEL,
                         messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_query}
+                            {"role": "user", "content": user_combined_prompt}
                         ]
                     )
                     ai_reply = response.choices.message.content
@@ -159,4 +164,4 @@ if user_query:
         # Display and Save Reply to History
         st.write(ai_reply)
         st.session_state.messages.append({"role": "assistant", "content": ai_reply})
-              
+                    
